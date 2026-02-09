@@ -1,20 +1,21 @@
-# Hybrid Human-AI Orchestration: Design Patterns from a Production Voice AI System
+# The Hybrid Orchestrator: A Framework for Coordinating Human-AI Teams
 
 **Pavel Sukhachev**
 Electromania LLC
 pavel@electromania.llc
+ORCID: 0009-0006-4546-9963
 
 ---
 
 ## Abstract
 
-Long-running AI agents face a fundamental constraint: context windows limit what they can "remember" in a single session. Recent work addresses this for software development through external task trackers. We extend this approach to general enterprise workflows.
+Long-running AI agents face a fundamental constraint: context windows limit what they can remember in a single session. Recent work addresses this for software development through external task trackers. But real enterprises need more than coding agents. They need hybrid teams—humans and AI working together across voice, text, and web.
 
-This paper presents design patterns for hybrid human-AI orchestration, derived from a production voice AI system for insurance applications. We describe four architectural components: (1) session state externalization for cross-session continuity, (2) multi-channel communication integrating voice, SMS, and web interfaces, (3) real-time activity monitoring with configurable intervention triggers, and (4) human escalation pathways for exception handling.
+This paper presents the Hybrid Orchestrator, a framework for coordinating human-AI teams. The framework has three layers: an orchestrator that monitors progress and detects blockers, workers (both human and AI) that execute tasks, and communication channels that connect them. We describe four design patterns that make this work: (1) session state externalization for cross-session continuity, (2) multi-channel communication routing, (3) real-time activity monitoring with configurable triggers, and (4) human escalation pathways.
 
-We do not claim these patterns are novel in isolation—monitoring, notifications, and human escalation are well-established. Our contribution is documenting how these patterns combine in a working hybrid system, with implementation details extracted from production code. We release an open-source reference implementation under Apache 2.0.
+We do not claim these patterns are novel in isolation. Monitoring, notifications, and escalation are well-established. Our contribution is documenting how these patterns combine into a working framework for hybrid teams, with implementation details and a reference implementation under Apache 2.0.
 
-**Keywords**: multi-agent systems, human-AI collaboration, voice AI, enterprise automation, design patterns
+**Keywords**: multi-agent systems, human-AI collaboration, hybrid orchestration, enterprise automation, design patterns
 
 ---
 
@@ -27,42 +28,44 @@ Large language models operate within fixed context windows. Claude supports 200,
 This creates practical problems for long-running tasks:
 
 1. **Repeated exploration**. New sessions re-discover information the previous session already found.
-2. **Lost decisions**. Choices made in earlier sessions aren't available later.
+2. **Lost decisions**. Choices made in earlier sessions are not available later.
 3. **Broken continuity**. Multi-step workflows stall when context resets.
 
-### 1.2 The External Memory Solution
+### 1.2 Beyond Coding Agents
 
-Recent work addresses this through external storage. Anthropic's engineering blog recommends "externalizing state to persistent storage" (Anthropic, 2025). The Linear Agent Harness (Medin, 2025) implements this for software development—agents use Linear's issue tracker as external memory, writing session summaries as comments.
+Recent work addresses the context window problem for software development. Anthropic's engineering blog recommends "externalizing state to persistent storage" (Anthropic, 2025). The Linear Agent Harness (Medin, 2025) implements this—agents use Linear's issue tracker as external memory.
 
-This approach works well for coding tasks. The question we explore: can similar patterns apply to other domains?
+This works well for coding. But enterprises need more:
 
-### 1.3 Scope and Contributions
+- **Hybrid teams**. Real work involves humans and AI agents together. A coding agent works alone. An enterprise workflow has managers, specialists, and AI each handling different parts.
+- **Multiple channels**. Coding agents communicate through task comments. Enterprise teams use voice, email, SMS, Slack, and dashboards.
+- **Domain adaptation**. A coding agent framework assumes pull requests and test suites. Insurance needs forms and compliance. Healthcare needs patient records and HIPAA. Each domain has different workflows.
 
-This is a **design pattern paper**, not an experimental study. We do not present controlled experiments comparing hybrid versus pure-AI approaches. Instead, we document patterns from a production system and provide implementation guidance.
+No existing framework addresses all three.
+
+### 1.3 Our Contribution
+
+We present the Hybrid Orchestrator, a framework that coordinates human-AI teams across multiple communication channels with pluggable domain adapters.
 
 Our contributions:
 
-1. **Pattern Documentation**. We describe four design patterns for hybrid orchestration, with code examples from production.
-
-2. **Reference Implementation**. We provide an open-source framework implementing these patterns.
-
-3. **Case Study**. We describe a production voice AI system as a concrete example.
+1. **Framework Architecture**. A three-layer system: orchestrator, workers, and channels.
+2. **Four Design Patterns**. Documented patterns with implementation details.
+3. **Domain Adapter Pattern**. A pluggable architecture for industry-specific customization.
+4. **Reference Implementation**. Open-source code under Apache 2.0.
 
 We explicitly acknowledge:
 - These patterns are not individually novel
 - We have not conducted controlled experiments
-- Our case study is a single system (n=1)
-- Generalization to other domains requires further validation
+- Generalization to diverse domains requires further validation
 
 ### 1.4 Paper Organization
 
-Section 2 reviews related work. Section 3 presents the four design patterns. Section 4 describes the production case study. Section 5 covers implementation details. Section 6 discusses limitations. Section 7 concludes.
+Section 2 reviews related work. Section 3 presents the framework architecture. Section 4 details the four design patterns. Section 5 describes the domain adapter system. Section 6 covers implementation. Section 7 discusses limitations. Section 8 concludes.
 
 ---
 
 ## 2. Related Work
-
-We review related work fairly, noting both capabilities and limitations of each approach.
 
 ### 2.1 Long-Running Agent Frameworks
 
@@ -74,23 +77,23 @@ We review related work fairly, noting both capabilities and limitations of each 
 
 The demo video shows the system building a Claude.ai clone over 24 hours, completing approximately 54% of 200 tasks. This demonstrates both viability and limitations—agents sometimes loop, hallucinate, or require intervention.
 
-Our work extends this approach to non-coding domains. We add voice communication and human worker coordination. However, we inherit similar limitations: our agents also require monitoring and occasional intervention.
+Our work extends this approach beyond coding. We add voice communication and human worker coordination. However, we inherit similar limitations: agents require monitoring and occasional intervention.
 
 ### 2.2 Multi-Agent Frameworks
 
-**LangGraph** uses directed graphs to define agent workflows. It supports human-in-the-loop patterns through interruptible nodes. We could have built our system on LangGraph; we chose a simpler custom approach for our specific use case.
+**LangGraph** uses directed graphs to define agent workflows. It supports human-in-the-loop patterns through interruptible nodes.
 
 **AutoGen** (Microsoft) enables conversational multi-agent systems. It explicitly supports human agents alongside AI agents. The `UserProxyAgent` class provides human integration. Our contribution is not "adding humans to multi-agent systems"—AutoGen already does this.
 
 **CrewAI** assigns roles to agents in a crew structure. It focuses on AI-to-AI delegation rather than human-AI coordination.
 
-These frameworks are more general than ours. We solve a narrower problem (voice-guided form completion with human monitoring) with a more specific solution.
+These frameworks are more general than ours. We solve a narrower problem (coordinating hybrid teams across multiple channels) with a more specific solution.
 
 ### 2.3 Voice AI Platforms
 
-**VAPI** provides enterprise voice AI infrastructure with telephony integration. We use VAPI for voice communication. Our contribution is not the voice capability—VAPI provides that—but the integration with session tracking and human escalation.
+**VAPI** provides enterprise voice AI infrastructure with telephony integration. **OpenAI Realtime API** offers WebSocket-based voice interaction. These platforms provide voice capabilities but not orchestration.
 
-**OpenAI Realtime API** offers WebSocket-based voice interaction. It's lower-level than VAPI, requiring more integration work.
+Our contribution is not voice capability—these platforms provide that—but the integration of voice with session tracking, activity monitoring, and human escalation.
 
 ### 2.4 Enterprise Workflow Tools
 
@@ -98,72 +101,184 @@ Traditional workflow tools (ServiceNow, Salesforce Flow) support human tasks, ap
 
 ### 2.5 What We Actually Contribute
 
-To be explicit about novelty:
-
 | Pattern | Prior Art | Our Contribution |
 |---------|-----------|------------------|
-| External state storage | Linear Agent Harness, databases | Apply to non-coding domain |
-| Human-AI coordination | AutoGen, workflow tools | Integrate with voice AI |
-| Multi-channel notifications | Twilio, PagerDuty | Combine in agent context |
-| Activity monitoring | APM tools, dashboards | Apply to form completion |
+| External state storage | Linear Agent Harness, databases | Generalize beyond coding |
+| Human-AI coordination | AutoGen, workflow tools | Integrate with voice + multiple channels |
+| Multi-channel notifications | Twilio, PagerDuty | Combine in agent orchestration context |
+| Activity monitoring | APM tools, dashboards | Apply to hybrid team workflows |
 
 Our contribution is the combination and documentation, not the individual patterns.
 
 ---
 
-## 3. Design Patterns
+## 3. Framework Architecture
 
-We present four patterns extracted from our production system.
+### 3.1 Three-Layer Architecture
 
-### 3.1 Pattern 1: Session State Externalization
+The Hybrid Orchestrator has three layers:
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    ORCHESTRATOR LAYER                     │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │
+│  │   Monitor    │  │   Blocker    │  │   Channel    │  │
+│  │   Service    │  │   Detector   │  │   Selector   │  │
+│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘  │
+│         │                 │                 │           │
+├─────────┼─────────────────┼─────────────────┼───────────┤
+│         │          WORKER LAYER              │           │
+│  ┌──────┴───────┐  ┌──────┴───────┐  ┌──────┴───────┐  │
+│  │  AI Worker   │  │  AI Worker   │  │ Human Worker │  │
+│  │  (Agent 1)   │  │  (Agent 2)   │  │  (Employee)  │  │
+│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘  │
+│         │                 │                 │           │
+├─────────┼─────────────────┼─────────────────┼───────────┤
+│         │         CHANNEL LAYER              │           │
+│  ┌──────┴──┐  ┌───┴───┐  ┌──┴───┐  ┌───────┴───────┐  │
+│  │  Voice  │  │  SMS  │  │ Email│  │   Dashboard   │  │
+│  └─────────┘  └───────┘  └──────┘  └───────────────┘  │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Orchestrator Layer**: Monitors all workers. Detects blockers. Selects the right communication channel for each intervention.
+
+**Worker Layer**: Executes tasks. Workers can be AI agents or human employees. Both report status to the same task tracker.
+
+**Channel Layer**: Delivers messages. Each channel has different latency, richness, and appropriate use cases.
+
+### 3.2 Component Roles
+
+| Component | Role | Example |
+|-----------|------|---------|
+| **Monitor Service** | Watches task progress, detects stalls | Polls task tracker every 30 seconds |
+| **Blocker Detector** | Identifies what is blocking progress | "Task stalled 5 minutes, same screen" |
+| **Channel Selector** | Picks the best channel for the situation | Voice for urgent, SMS for links, email for details |
+| **AI Worker** | Executes tasks autonomously | Fills forms, writes code, researches |
+| **Human Worker** | Handles exceptions the AI cannot | Reviews edge cases, approves decisions |
+| **Task Tracker** | Source of truth for all work | Database, Linear, JIRA |
+
+### 3.3 Data Flow
+
+A typical interaction:
+
+1. **Task created** in tracker (by user, API, or another agent)
+2. **AI worker picks up** the task and begins work
+3. **Monitor service** watches for progress
+4. **AI worker reports** status updates to tracker
+5. **Blocker detected** (e.g., no progress for 5 minutes)
+6. **Channel selector** picks voice (urgent) or SMS (link needed)
+7. **Intervention delivered** to the right person via the right channel
+8. **Human worker** takes over if AI cannot resolve
+9. **Task completed** and marked done in tracker
+
+### 3.4 Blocker Detection Logic
+
+```python
+def detect_blocker(task: Task) -> Optional[Blocker]:
+    # Time-based: task stuck too long
+    if task.time_in_status > threshold_by_type[task.type]:
+        return Blocker(type="stalled", severity="medium")
+
+    # Failure-based: repeated errors
+    if task.consecutive_failures > 3:
+        return Blocker(type="repeated_failure", severity="high")
+
+    # Dependency-based: waiting on something
+    if task.blocked_by and task.blocked_by.status != "done":
+        return Blocker(type="dependency", severity="low")
+
+    # Inactivity-based: user went silent
+    if task.last_user_activity and \
+       (now() - task.last_user_activity).seconds > 300:
+        return Blocker(type="user_inactive", severity="medium")
+
+    return None
+```
+
+### 3.5 Channel Selection Logic
+
+```python
+def select_channel(blocker: Blocker, worker: Worker) -> str:
+    if blocker.severity == "high" and worker.is_available:
+        return "voice"     # Immediate, high-bandwidth
+
+    if blocker.type == "link_needed":
+        return "sms"       # Links work best via text
+
+    if blocker.type == "detailed_instructions":
+        return "email"     # Long-form content
+
+    if worker.preferred_channel:
+        return worker.preferred_channel  # Respect preferences
+
+    if blocker.severity == "low":
+        return "dashboard"  # Don't interrupt
+
+    return "sms"           # Default for medium severity
+```
+
+---
+
+## 4. Design Patterns
+
+We present four patterns that form the core of the framework.
+
+### 4.1 Pattern 1: Session State Externalization
 
 **Problem**: Agent sessions are ephemeral. Context windows fill up. Sessions timeout. How do you maintain state across session boundaries?
 
-**Solution**: Store all session state in a database. The agent queries current state at session start; updates state throughout; writes summary before session ends.
+**Solution**: Store all session state in a database. The agent queries current state at session start, updates state throughout, writes summary before session ends.
 
-**Implementation** (from production system):
+**Implementation**:
 
 ```sql
 -- Session table stores all state external to the agent
 CREATE TABLE sessions (
-    token           VARCHAR PRIMARY KEY,
-    oops_token      VARCHAR UNIQUE,      -- External system reference
-    first_name      VARCHAR,
-    last_name       VARCHAR,
-    primary_phone   VARCHAR,
-    status          VARCHAR DEFAULT 'ACTIVE',
-    pending_highlight JSON,               -- Queued UI commands
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    workflow_type   VARCHAR(50) NOT NULL,     -- Domain identifier
+    external_ref    VARCHAR(255) UNIQUE,      -- External system reference
+    worker_id       VARCHAR(100),             -- Current assigned worker
+    status          VARCHAR(20) DEFAULT 'ACTIVE',
+    context         JSONB NOT NULL DEFAULT '{}',  -- Domain-specific state
+    pending_actions JSONB,                    -- Queued commands
     created_at      TIMESTAMP DEFAULT NOW(),
+    updated_at      TIMESTAMP DEFAULT NOW(),
     expires_at      TIMESTAMP
 );
 
 -- Activity log enables session reconstruction
-CREATE TABLE screen_activities (
-    id              UUID PRIMARY KEY,
-    session_token   VARCHAR REFERENCES sessions(token),
-    screen_name     VARCHAR,
-    fields          JSON,                 -- Current form state
+CREATE TABLE activities (
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    session_id      UUID REFERENCES sessions(id) ON DELETE CASCADE,
+    actor_type      VARCHAR(20) NOT NULL,     -- 'ai', 'human', 'system'
+    action          VARCHAR(100) NOT NULL,
+    data            JSONB NOT NULL DEFAULT '{}',
     created_at      TIMESTAMP DEFAULT NOW()
 );
+
+CREATE INDEX idx_activities_session ON activities(session_id);
+CREATE INDEX idx_activities_created ON activities(created_at);
 ```
 
 **Key Design Decisions**:
 
-1. **Primary key is session token**, not auto-increment ID. Enables direct lookup without joins.
+1. **Generic context field**. Domain-specific state goes in `context` (JSONB). No need to change the schema for each domain.
 
-2. **External system references stored explicitly**. The `oops_token` links to the insurance form system.
+2. **Actor type tracking**. Every activity records who did it—AI, human, or system. This enables audit trails and debugging.
 
-3. **Activity log is append-only**. Enables replay and debugging. Never update; always insert.
+3. **Activity log is append-only**. Never update; always insert. Enables replay and debugging.
 
-4. **Expiration built in**. Sessions auto-expire after 24 hours. Cleanup is automatic.
+4. **Expiration built in**. Sessions auto-expire. Cleanup is automatic.
 
 **Tradeoffs**:
 
 - Adds database dependency (latency, failure modes)
 - Requires careful schema design upfront
 - Storage grows with activity volume
+- JSONB queries are slower than typed columns
 
-### 3.2 Pattern 2: Multi-Channel Communication Hub
+### 4.2 Pattern 2: Multi-Channel Communication Hub
 
 **Problem**: Different situations need different communication channels. Voice for urgent guidance. SMS for links. Dashboard for monitoring. How do you coordinate?
 
@@ -175,335 +290,410 @@ CREATE TABLE screen_activities (
 class ChannelHub:
     def __init__(self):
         self.channels = {
-            'voice': VAPIChannel(),
-            'sms': TwilioChannel(),
-            'dashboard': WebSocketChannel(),
-            'slack': SlackChannel()
+            'voice': VoiceChannel(),
+            'sms': SMSChannel(),
+            'email': EmailChannel(),
+            'dashboard': DashboardChannel(),
+            'slack': SlackChannel(),
+            'task_tracker': TaskTrackerChannel()
         }
 
-    def send(self, message: str, context: MessageContext):
-        # Select channel based on context
-        if context.urgency == 'immediate' and context.recipient.is_available:
-            channel = 'voice'
-        elif context.type == 'link':
-            channel = 'sms'
-        elif context.recipient.is_internal:
-            channel = 'slack'
-        else:
-            channel = 'dashboard'
+    async def send(self, message: str, context: MessageContext):
+        channel_name = select_channel(context.blocker, context.recipient)
+        channel = self.channels[channel_name]
 
-        self.channels[channel].send(message, context.recipient)
-```
+        try:
+            result = await channel.send(message, context.recipient)
+            await self.log_delivery(channel_name, message, result)
+            return result
+        except ChannelError:
+            # Fallback to next-best channel
+            fallback = self.get_fallback(channel_name)
+            return await self.channels[fallback].send(message, context.recipient)
 
-**Voice Channel Details** (from production system):
-
-```typescript
-// VAPI tool call handling - always return 200
-app.post('/webhooks/vapi', async (req, res) => {
-    try {
-        const { message } = req.body;
-
-        if (message.type === 'tool-calls') {
-            const results = await handleToolCalls(message.toolCalls);
-            return res.json({ results });
+    def get_fallback(self, failed_channel: str) -> str:
+        fallbacks = {
+            'voice': 'sms',
+            'sms': 'email',
+            'email': 'dashboard',
+            'slack': 'email'
         }
-    } catch (error) {
-        // CRITICAL: Always return 200 to VAPI
-        // HTTP errors break the voice session completely
-        return res.status(200).json({
-            results: [{
-                toolCallId: 'error',
-                result: JSON.stringify({
-                    success: false,
-                    error: 'Temporary issue. Please try again.'
-                })
-            }]
-        });
-    }
-});
+        return fallbacks.get(failed_channel, 'dashboard')
 ```
 
-**Lesson Learned**: Voice AI platforms are brittle to HTTP errors. Our early versions returned 500 on errors; this caused the voice assistant to disconnect entirely. Always return 200 with error details in the payload.
+**Channel Comparison**:
 
-### 3.3 Pattern 3: Activity Monitoring with Triggers
+| Channel | Latency | Richness | Best For | Fallback |
+|---------|---------|----------|----------|----------|
+| Voice | Real-time | High | Urgent guidance, complex explanations | SMS |
+| SMS | Seconds | Low | Links, short updates, confirmations | Email |
+| Email | Minutes | High | Detailed instructions, documents | Dashboard |
+| Dashboard | Real-time | Medium | Monitoring, status overview | Email |
+| Slack | Seconds | Medium | Team coordination, quick questions | Email |
 
-**Problem**: How do you detect when a user is stuck, confused, or needs help?
+**Lesson Learned**: Voice AI platforms are brittle to HTTP errors. Early versions returned 500 on errors; this caused voice sessions to disconnect entirely. Always return 200 with error details in the payload:
 
-**Solution**: Track activity stream. Apply rules to detect patterns. Trigger interventions when patterns match.
+```python
+@app.post('/webhooks/voice')
+async def handle_voice_webhook(request):
+    try:
+        result = await process_tool_call(request)
+        return JSONResponse(status_code=200, content=result)
+    except Exception:
+        # CRITICAL: Always return 200 to voice platforms
+        return JSONResponse(status_code=200, content={
+            "success": False,
+            "error": "Temporary issue. Please try again."
+        })
+```
+
+### 4.3 Pattern 3: Activity Monitoring with Triggers
+
+**Problem**: How do you detect when a user or worker is stuck, confused, or needs help?
+
+**Solution**: Track the activity stream. Apply rules to detect patterns. Trigger interventions when patterns match.
 
 **Implementation**:
 
-```typescript
-// Store every screen update
-async function recordScreenActivity(sessionToken: string, screenData: any) {
-    await db.screenActivity.create({
-        data: {
-            sessionToken,
-            screenName: screenData.screen_name,
-            fields: screenData.fields,
-            createdAt: new Date()
-        }
-    });
-}
+```python
+class ActivityMonitor:
+    def __init__(self, rules: list[TriggerRule]):
+        self.rules = rules
+        self.trigger_counts = {}  # Track per-session trigger counts
 
-// Detect changes between activities
-function detectChanges(previous: Activity, current: Activity): FieldChange[] {
-    if (!previous) return [];
+    async def check(self, session: Session) -> Optional[Intervention]:
+        activities = await get_recent_activities(session.id)
 
-    const changes = [];
-    const prevFields = new Map(previous.fields.map(f => [f.id, f.value]));
+        for rule in self.rules:
+            if self._should_trigger(rule, session, activities):
+                return Intervention(
+                    type=rule.action_type,
+                    channel=rule.channel,
+                    message=rule.message.format(**session.context),
+                    priority=rule.priority
+                )
+        return None
 
-    for (const field of current.fields) {
-        const prevValue = prevFields.get(field.id);
-        if (prevValue !== field.value) {
-            changes.push({
-                fieldId: field.id,
-                from: prevValue,
-                to: field.value
-            });
-        }
-    }
-    return changes;
-}
+    def _should_trigger(self, rule, session, activities) -> bool:
+        # Check max triggers per session
+        key = f"{session.id}:{rule.name}"
+        if self.trigger_counts.get(key, 0) >= rule.max_triggers:
+            return False
+
+        # Evaluate condition
+        if rule.condition_type == "no_activity":
+            return self._check_inactivity(activities, rule.duration_seconds)
+        elif rule.condition_type == "repeated_error":
+            return self._check_repeated_errors(activities, rule.error_count)
+        elif rule.condition_type == "no_progress":
+            return self._check_no_progress(activities, rule.duration_seconds)
+
+        return False
 ```
 
 **Trigger Rules** (configurable per domain):
 
 ```yaml
 triggers:
-  - name: inactivity_warning
-    condition:
-      type: no_activity
-      duration_seconds: 120
-    action:
-      type: voice_prompt
-      message: "I notice you've paused. Need any help with this section?"
+  - name: gentle_nudge
+    condition_type: no_activity
+    duration_seconds: 120
+    action_type: voice_prompt
+    channel: voice
+    message: "Still there? Need any help?"
+    max_triggers: 2
+    priority: low
 
   - name: repeated_error
-    condition:
-      type: same_field_changed
-      times: 3
-      within_seconds: 60
-    action:
-      type: highlight_field
-      then: voice_guidance
+    condition_type: repeated_error
+    error_count: 3
+    within_seconds: 60
+    action_type: guidance
+    channel: voice
+    message: "Looks like that field is tricky. Let me help."
+    max_triggers: 1
+    priority: medium
 
-  - name: session_abandoned
-    condition:
-      type: no_activity
-      duration_seconds: 1800
-    action:
-      type: sms_followup
-      message: "Hi! You started an application earlier. Ready to continue?"
+  - name: escalate_to_human
+    condition_type: no_progress
+    duration_seconds: 300
+    action_type: dashboard_alert
+    channel: dashboard
+    message: "Session {id} stuck for 5+ minutes. Needs human review."
+    max_triggers: 1
+    priority: high
+
+  - name: followup_after_abandon
+    condition_type: no_activity
+    duration_seconds: 3600
+    action_type: sms
+    channel: sms
+    message: "Hi {name}! Ready to continue where you left off? {resume_link}"
+    max_triggers: 1
+    priority: low
 ```
 
-**Important**: We have not validated these specific thresholds experimentally. The 120-second and 1800-second values are based on intuition and informal observation, not controlled studies.
+**Important**: We have not validated these specific thresholds experimentally. The values are based on informal observation, not controlled studies.
 
-### 3.4 Pattern 4: Human Escalation Pathways
+### 4.4 Pattern 4: Human Escalation Pathways
 
-**Problem**: AI agents can't handle everything. How do you smoothly escalate to humans?
+**Problem**: AI agents cannot handle everything. How do you smoothly escalate to humans?
 
 **Solution**: Define escalation triggers. Route to human queue. Provide full context. Enable seamless takeover.
 
 **Implementation**:
 
-```typescript
-// Dashboard shows all sessions with status indicators
-async function getDashboardData() {
-    const sessions = await db.session.findMany({
-        where: { status: 'ACTIVE' },
-        include: {
-            screenActivities: {
-                orderBy: { createdAt: 'desc' },
-                take: 1
-            }
+```python
+class EscalationManager:
+    async def escalate(self, session: Session, reason: str):
+        # Collect full context for the human
+        context = await self.build_context(session)
+
+        # Create dashboard alert
+        alert = DashboardAlert(
+            session_id=session.id,
+            reason=reason,
+            context=context,
+            priority="high",
+            created_at=now()
+        )
+        await self.dashboard.push_alert(alert)
+
+        # Notify available human workers
+        humans = await self.get_available_humans(session.workflow_type)
+        for human in humans:
+            await self.channel_hub.send(
+                f"Session {session.id} needs attention: {reason}",
+                MessageContext(recipient=human, urgency="high")
+            )
+
+    async def build_context(self, session: Session) -> dict:
+        """Give humans everything they need. Never make them ask the user to repeat."""
+        activities = await get_all_activities(session.id)
+        return {
+            "session": session.to_dict(),
+            "activity_timeline": [a.to_dict() for a in activities],
+            "current_state": session.context,
+            "time_elapsed": (now() - session.created_at).total_seconds(),
+            "ai_actions_taken": [a for a in activities if a.actor_type == "ai"],
+            "escalation_reason": session.last_blocker
         }
-    });
-
-    return sessions.map(s => ({
-        token: s.token,
-        customer: `${s.firstName} ${s.lastName}`,
-        phone: s.primaryPhone,
-        currentScreen: s.screenActivities[0]?.screenName,
-        lastActivity: s.screenActivities[0]?.createdAt,
-        needsAttention: isStalled(s)  // Highlight for humans
-    }));
-}
-
-function isStalled(session: Session): boolean {
-    const lastActivity = session.screenActivities[0]?.createdAt;
-    if (!lastActivity) return false;
-
-    const minutesSinceActivity = (Date.now() - lastActivity.getTime()) / 60000;
-    return minutesSinceActivity > 5;
-}
 ```
 
 **Human Takeover Flow**:
 
-1. Dashboard highlights stalled sessions
-2. Human agent clicks to view full context (all screen activities, current fields)
-3. Human can: send SMS, initiate call, or take over the voice session
-4. If voice takeover: VAPI transfers call to human agent queue
+1. Dashboard highlights sessions needing attention
+2. Human sees full context (all activities, current state, what AI tried)
+3. Human can: send a message, make a call, or take over the session directly
+4. If voice takeover: call transfers to human agent queue
+5. Human never asks the user to repeat information—the dashboard shows everything
 
-**Design Principle**: Humans should never ask the customer to repeat information. The dashboard shows everything the AI has collected.
-
----
-
-## 4. Case Study: Production Voice AI System
-
-### 4.1 System Overview
-
-The system is a voice-guided life insurance application platform. It is a production system, deployed and handling real customer calls.
-
-**Architecture**:
-
-```
-Customer Phone ──▶ VAPI Voice AI ──▶ Backend (Express/Node) ──▶ Insurance Form System
-       │                │                      │
-       │                │                      ├──▶ PostgreSQL (session state)
-       │                │                      │
-       │                ◀── Tool Results ──────┤
-       │                                       │
-       ▼                                       ▼
-  Web Browser ◀──────────────────────── Form + Highlights
-       │
-       └──────────────────────────────▶ Dashboard (human monitoring)
-```
-
-**Components**:
-
-| Component | Technology | Role |
-|-----------|------------|------|
-| Voice AI | VAPI + GPT-4o + ElevenLabs | Guides customer through form |
-| Backend | Express.js on AWS App Runner | Handles webhooks, manages state |
-| Database | PostgreSQL on RDS | Stores sessions, activities |
-| Form System | OOPS API (third-party) | Renders insurance application |
-| Dashboard | Next.js | Human agent monitoring |
-
-### 4.2 Workflow
-
-1. **Customer calls** the system phone number
-2. **Michelle (voice AI)** greets them and asks for name and phone number
-3. **Backend creates session** in database, registers with form system
-4. **SMS sent** with application link
-5. **Customer opens form** on their phone/computer
-6. **Michelle guides** them through each field, reading values back for confirmation
-7. **Field highlighting** shows customer exactly where to look
-8. **Human agents** monitor dashboard for stuck sessions
-9. **Escalation** happens automatically for sessions stalled >5 minutes
-
-### 4.3 Implementation Details
-
-**Voice AI Prompt Engineering** (lessons learned):
-
-```
-You're Michelle, a friendly insurance guide. Be casual, SHORT, and NEVER pause.
-
-STEP 1: COLLECT INFO FIRST
-Before sending link, you MUST get:
-1. "What's your first name?"
-2. "And your last name?"
-3. "What's a good phone number to text the link to?"
-
-NEVER skip the phone number. NEVER use "none" or "unknown".
-
-STEP 2: AFTER getScreenState - SPEAK IMMEDIATELY
-When you check the screen, say what you see AND what to do:
-- "I see your name is Pavel. The next field is date of birth. What's your birthday?"
-
-BANNED PHRASES (these cause confusion):
-- "unknown"
-- "none"
-- "what would you like to do"
-- "let me know when you're ready"
-```
-
-**Why explicit bans?** Early versions of Michelle would say things like "I see your phone number is unknown" when the field was empty. Customers found this confusing. Explicitly banning phrases reduced these issues.
-
-**Page Detection Heuristics**:
-
-```typescript
-// Screen names from OOPS are sometimes stale
-// Use field IDs as fallback
-function getPageNumber(screenName: string, fields: Field[]): number {
-    // Try screen name first
-    const fromName = getPageFromScreenName(screenName);
-    if (fromName) return fromName;
-
-    // Fall back to field detection
-    const fieldIds = fields.map(f => f.id.toLowerCase());
-
-    if (fieldIds.some(id => id.includes('first_name'))) return 1;
-    if (fieldIds.some(id => id.includes('dob'))) return 2;
-    if (fieldIds.some(id => id.includes('tobacco'))) return 3;
-    if (fieldIds.some(id => id.includes('beneficiary'))) return 4;
-    // ... etc
-
-    return 0; // Unknown
-}
-```
-
-### 4.4 Metrics (Honest Assessment)
-
-We do not have rigorous comparative metrics. Here is what we know:
-
-**What we can measure**:
-- Total sessions created
-- Sessions reaching completion
-- Average time per session
-- Human interventions triggered
-
-**What we cannot claim**:
-- Comparison to "pure human" baseline (we don't have one)
-- Comparison to "pure AI" baseline (system requires human monitoring)
-- Statistical significance of any improvements
-- Generalization to other domains
-
-**Honest observation**: The system works. Customers complete applications via voice guidance. Human agents intervene occasionally. We believe this is better than a pure web form, but we have not proven it experimentally.
-
-### 4.5 Failure Modes
-
-We document failures to help others avoid them:
-
-| Failure Mode | Frequency | Mitigation |
-|--------------|-----------|------------|
-| Voice AI loops on same question | ~5% of calls | Explicit "move on" instructions in prompt |
-| Customer confusion about highlighting | ~10% of sessions | Added verbal explanation: "I'll highlight the field in yellow" |
-| SMS not received (carrier filtering) | ~2% of attempts | Retry logic, fallback to reading URL |
-| Database timeout under load | Rare | Added 5-second timeout with fallback |
+**Design Principle**: The human should know more about the session than the user does. Complete context transfer is not optional.
 
 ---
 
-## 5. Implementation
+## 5. Domain Adapters
 
-### 5.1 Open-Source Reference
+### 5.1 Adapter Architecture
+
+Different industries have different workflows. The Hybrid Orchestrator uses a domain adapter pattern to handle this.
+
+```python
+class DomainAdapter:
+    """Base class for domain-specific customization."""
+
+    def get_trigger_rules(self) -> list[TriggerRule]:
+        """Return domain-specific trigger rules."""
+        raise NotImplementedError
+
+    def get_worker_roles(self) -> list[WorkerRole]:
+        """Define the types of workers needed."""
+        raise NotImplementedError
+
+    def get_channel_preferences(self) -> dict:
+        """Map situations to preferred channels."""
+        raise NotImplementedError
+
+    def parse_activity(self, raw_data: dict) -> Activity:
+        """Convert domain-specific events to standard activities."""
+        raise NotImplementedError
+
+    def detect_domain_blockers(self, session: Session) -> Optional[Blocker]:
+        """Domain-specific blocker detection beyond standard rules."""
+        return None
+```
+
+### 5.2 Example: Financial Services Adapter
+
+Financial services workflows involve form completion, document verification, and compliance checks.
+
+```python
+class FinancialServicesAdapter(DomainAdapter):
+    def get_trigger_rules(self):
+        return [
+            TriggerRule(
+                name="form_field_stuck",
+                condition_type="same_field_changed",
+                times=3, within_seconds=60,
+                action_type="highlight_and_guide",
+                channel="voice"
+            ),
+            TriggerRule(
+                name="compliance_review",
+                condition_type="reached_stage",
+                stage="submission",
+                action_type="human_review",
+                channel="dashboard"
+            )
+        ]
+
+    def get_worker_roles(self):
+        return [
+            WorkerRole("voice_guide", type="ai",
+                        description="Guides users through forms via phone"),
+            WorkerRole("compliance_reviewer", type="human",
+                        description="Reviews submissions for compliance"),
+            WorkerRole("supervisor", type="human",
+                        description="Monitors all sessions, handles escalations")
+        ]
+
+    def get_channel_preferences(self):
+        return {
+            "form_guidance": "voice",
+            "send_link": "sms",
+            "compliance_alert": "dashboard",
+            "followup": "sms"
+        }
+```
+
+### 5.3 Example: Software Development Adapter
+
+Extends the Linear Agent Harness pattern with human code reviewers.
+
+```python
+class SoftwareDevelopmentAdapter(DomainAdapter):
+    def get_trigger_rules(self):
+        return [
+            TriggerRule(
+                name="tests_failing",
+                condition_type="repeated_error",
+                error_count=3,
+                action_type="escalate",
+                channel="slack"
+            ),
+            TriggerRule(
+                name="pr_stale",
+                condition_type="no_activity",
+                duration_seconds=86400,  # 24 hours
+                action_type="nudge",
+                channel="slack"
+            )
+        ]
+
+    def get_worker_roles(self):
+        return [
+            WorkerRole("coding_agent", type="ai",
+                        description="Writes code, runs tests"),
+            WorkerRole("code_reviewer", type="human",
+                        description="Reviews pull requests"),
+            WorkerRole("tech_lead", type="human",
+                        description="Resolves architectural blockers")
+        ]
+```
+
+### 5.4 Example: Customer Support Adapter
+
+```python
+class CustomerSupportAdapter(DomainAdapter):
+    def get_trigger_rules(self):
+        return [
+            TriggerRule(
+                name="sentiment_drop",
+                condition_type="sentiment_below",
+                threshold=0.3,
+                action_type="escalate",
+                channel="dashboard"
+            ),
+            TriggerRule(
+                name="topic_out_of_scope",
+                condition_type="classification",
+                label="out_of_scope",
+                action_type="transfer_to_human",
+                channel="voice"
+            )
+        ]
+
+    def get_worker_roles(self):
+        return [
+            WorkerRole("frontline_ai", type="ai",
+                        description="Handles common queries"),
+            WorkerRole("specialist", type="human",
+                        description="Handles complex issues"),
+            WorkerRole("supervisor", type="human",
+                        description="Monitors quality, handles complaints")
+        ]
+```
+
+### 5.5 Writing Your Own Adapter
+
+To add a new domain:
+
+1. Subclass `DomainAdapter`
+2. Define trigger rules for your workflow
+3. Define worker roles (AI and human)
+4. Set channel preferences
+5. Implement `parse_activity` for your event format
+6. Optionally add domain-specific blocker detection
+
+The framework handles monitoring, routing, and escalation. Your adapter handles domain logic.
+
+---
+
+## 6. Implementation
+
+### 6.1 Reference Implementation
 
 We provide a reference implementation at `github.com/pavelsukhachev/hybrid-orchestrator` (Apache 2.0).
 
-**What's Included**:
+**What is Included**:
 - Session state management (PostgreSQL)
 - Activity tracking and change detection
-- Trigger rule engine
+- Trigger rule engine with configurable rules
+- Channel hub with fallback logic
 - Dashboard components
-- Example adapters (mock implementations)
+- Three example domain adapters
+- 97 passing tests
 
-**What's NOT Included** (proprietary):
-- VAPI voice integration
-- Specific insurance domain logic
-- Production deployment configurations
+**Repository Structure**:
 
-### 5.2 Technology Stack
+```
+hybrid-orchestrator/
+├── src/
+│   ├── orchestrator/       # Monitor, blocker detector, channel selector
+│   ├── workers/            # AI and human worker base classes
+│   ├── channels/           # Voice, SMS, email, dashboard, Slack
+│   ├── adapters/           # Domain adapter base + examples
+│   └── storage/            # Session and activity persistence
+├── tests/                  # 97 tests
+├── examples/               # Working examples with mock services
+├── paper/                  # This paper
+├── LICENSE                 # Apache 2.0
+└── CITATION.cff            # Citation metadata
+```
+
+### 6.2 Technology Stack
 
 ```
 Core Framework:
-├── Python 3.11+ (or Node.js 20+)
+├── Python 3.11+
 ├── PostgreSQL 15+
-├── Redis (optional, for pub/sub)
+├── asyncio for concurrent monitoring
 
 Integrations (bring your own):
 ├── Voice: VAPI, Twilio, or similar
 ├── SMS: Twilio, MessageBird
+├── Email: SendGrid, SES
+├── Chat: Slack, Teams
 ├── Task Tracker: Linear, JIRA, or custom
 
 Deployment:
@@ -512,85 +702,114 @@ Deployment:
 └── ~$50-100/month infrastructure cost
 ```
 
-### 5.3 Security Considerations
+### 6.3 Getting Started
 
-For enterprise deployment, address:
+```python
+from hybrid_orchestrator import Orchestrator
+from hybrid_orchestrator.adapters import FinancialServicesAdapter
+from hybrid_orchestrator.channels import SMSChannel, DashboardChannel
+
+# 1. Choose your domain
+adapter = FinancialServicesAdapter()
+
+# 2. Set up channels
+channels = {
+    'sms': SMSChannel(api_key="..."),
+    'dashboard': DashboardChannel(ws_url="..."),
+}
+
+# 3. Create orchestrator
+orchestrator = Orchestrator(
+    adapter=adapter,
+    channels=channels,
+    db_url="postgresql://...",
+    poll_interval=30  # seconds
+)
+
+# 4. Start monitoring
+await orchestrator.start()
+```
+
+### 6.4 Security Considerations
+
+For enterprise deployment:
 
 **Authentication & Authorization**:
 - API keys for all external integrations
 - Role-based access to dashboard
 - Session tokens with expiration
+- Worker identity verification
 
 **Data Protection**:
 - Encrypt PII at rest (database encryption)
 - TLS for all network communication
 - Audit logging for compliance
+- Data retention policies
 
 **Voice AI Specific**:
-- Don't log full transcripts (PII exposure)
+- Do not log full transcripts (PII exposure)
 - Mask phone numbers in logs
-- Review voice recordings policy
+- Review voice recording consent policies
 
-**Compliance** (if handling insurance/healthcare):
-- HIPAA may apply (PHI in voice calls)
-- SOC2 recommended for enterprise customers
-- Data retention policies required
-
-We have not achieved SOC2 or HIPAA certification for this system. These are areas for future work.
+**Compliance** (domain-dependent):
+- HIPAA may apply (healthcare)
+- SOC2 recommended for enterprise
+- PCI DSS for payment data
+- Domain-specific regulations
 
 ---
 
-## 6. Limitations
+## 7. Limitations
 
-We state limitations explicitly:
-
-### 6.1 Evaluation Limitations
+### 7.1 Evaluation Limitations
 
 - **No controlled experiment**. We cannot claim hybrid outperforms alternatives.
-- **Single case study**. This is one system in one domain.
-- **No public metrics**. We haven't published detailed performance data.
+- **No benchmark results yet**. We have published an evaluation benchmark (Sukhachev, 2026) but have not yet run comparative evaluations.
+- **Framework is new**. Limited production validation across domains.
 
-### 6.2 Technical Limitations
+### 7.2 Technical Limitations
 
-- **Voice latency**. VAPI adds 500-1500ms per turn. Users notice.
-- **Model costs**. GPT-4o/Claude are expensive at scale.
-- **Brittleness**. Voice AI fails on background noise, accents, interruptions.
+- **Voice latency**. Voice AI platforms add 500-1500ms per turn. Users notice.
+- **Model costs**. Frontier models (GPT-4, Claude) are expensive at scale.
+- **Brittleness**. Voice AI fails on background noise, accents, and interruptions.
+- **Single orchestrator**. Current design uses one monitor process. Scaling requires distributed coordination.
 
-### 6.3 Generalization Limitations
+### 7.3 Generalization Limitations
 
-- **Insurance-specific patterns**. Our heuristics may not transfer to other domains.
-- **English-only**. We haven't tested multilingual scenarios.
-- **U.S.-focused**. Phone/SMS patterns differ internationally.
+- **Domain adapters are untested at scale**. The adapter pattern is designed for flexibility but has not been validated across many domains.
+- **English-only**. We have not tested multilingual scenarios.
+- **Trigger thresholds are heuristic**. Optimal values likely differ by domain, user population, and workflow.
 
-### 6.4 What We Don't Know
+### 7.4 What We Do Not Know
 
 - Whether the orchestration layer adds value over simpler approaches
-- Optimal trigger thresholds for intervention
-- Long-term customer satisfaction
-- How patterns scale beyond hundreds of sessions
+- Optimal trigger thresholds for different domains
+- How patterns scale beyond hundreds of concurrent sessions
+- Long-term user satisfaction with hybrid workflows
 
 ---
 
-## 7. Conclusion
+## 8. Conclusion
 
-We presented four design patterns for hybrid human-AI orchestration:
+We presented the Hybrid Orchestrator, a framework for coordinating human-AI teams. The framework has three layers (orchestrator, workers, channels) and four design patterns:
 
 1. **Session State Externalization**: Store all state in a database for cross-session continuity.
-2. **Multi-Channel Communication**: Route messages to appropriate channels based on context.
-3. **Activity Monitoring with Triggers**: Detect patterns and trigger interventions.
-4. **Human Escalation Pathways**: Enable smooth handoff to human agents.
+2. **Multi-Channel Communication Hub**: Route messages to appropriate channels based on context and urgency.
+3. **Activity Monitoring with Triggers**: Detect patterns in the activity stream and trigger interventions.
+4. **Human Escalation Pathways**: Enable smooth handoff to human workers with complete context.
 
-These patterns are not novel individually. Our contribution is documenting their combination in a production system and providing a reference implementation.
+The domain adapter pattern makes the framework pluggable across industries. We showed examples for financial services, software development, and customer support.
 
-Our production system demonstrates that voice-guided hybrid systems can work in practice. We do not claim they are superior to alternatives—that requires experimental validation we have not conducted.
+These patterns are not novel individually. Our contribution is documenting their combination into a cohesive framework and providing a working implementation.
 
 We release our reference implementation under Apache 2.0 and invite the community to validate, extend, and improve upon these patterns.
 
 **Code**: github.com/pavelsukhachev/hybrid-orchestrator
+**Benchmark**: huggingface.co/datasets/pashas/insurance-ai-reliability-benchmark
 
-**Acknowledgments**: We thank Cole Medin for the Linear Agent Harness, which inspired this work. We thank VAPI for voice AI infrastructure. We thank reviewers who provided feedback on earlier drafts.
+**Acknowledgments**: We thank Cole Medin for the Linear Agent Harness, which inspired this work. We thank the open-source community for feedback on earlier drafts.
 
-**Conflict of Interest**: The author is founder of Electromania LLC, which operates the production system described in this paper commercially.
+**Conflict of Interest**: The author is founder of Electromania LLC, which develops enterprise AI systems.
 
 ---
 
@@ -608,206 +827,163 @@ We release our reference implementation under Apache 2.0 and invite the communit
 
 6. LangGraph Documentation. (2024). https://github.com/langchain-ai/langgraph
 
+7. Sukhachev, P. (2026). Insurance AI Reliability Benchmark. Hugging Face Hub. https://huggingface.co/datasets/pashas/insurance-ai-reliability-benchmark
+
 ---
 
-## Appendix A: Complete Session Schema
+## Appendix A: Session Schema
 
 ```sql
--- Full production schema
+-- Full schema for the Hybrid Orchestrator
 
-CREATE TYPE session_status AS ENUM ('ACTIVE', 'COMPLETED', 'CANCELLED', 'EXPIRED');
+CREATE TYPE session_status AS ENUM ('ACTIVE', 'PAUSED', 'COMPLETED', 'CANCELLED', 'EXPIRED');
+CREATE TYPE actor_type AS ENUM ('ai', 'human', 'system');
 
 CREATE TABLE sessions (
-    token           VARCHAR(255) PRIMARY KEY,
-    oops_token      VARCHAR(255) UNIQUE NOT NULL,
-    first_name      VARCHAR(100) NOT NULL,
-    last_name       VARCHAR(100) NOT NULL,
-    email           VARCHAR(255) NOT NULL,
-    primary_phone   VARCHAR(20) NOT NULL,
-    gender          VARCHAR(20) NOT NULL,
-    dob             VARCHAR(10) NOT NULL,  -- YYYY-MM-DD
-    smoker          INTEGER NOT NULL,
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    workflow_type   VARCHAR(50) NOT NULL,
+    external_ref    VARCHAR(255) UNIQUE,
+    worker_id       VARCHAR(100),
+    worker_type     actor_type,
     status          session_status DEFAULT 'ACTIVE',
-    pending_highlight JSONB,
+    context         JSONB NOT NULL DEFAULT '{}',
+    pending_actions JSONB,
+    metadata        JSONB DEFAULT '{}',
     created_at      TIMESTAMP DEFAULT NOW(),
     updated_at      TIMESTAMP DEFAULT NOW(),
     expires_at      TIMESTAMP NOT NULL
 );
 
-CREATE TABLE screen_activities (
+CREATE TABLE activities (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    session_token   VARCHAR(255) REFERENCES sessions(token) ON DELETE CASCADE,
-    screen_name     VARCHAR(255) NOT NULL,
-    action          VARCHAR(50),
-    fields          JSONB NOT NULL,
-    request_id      VARCHAR(255),
+    session_id      UUID REFERENCES sessions(id) ON DELETE CASCADE,
+    actor           actor_type NOT NULL,
+    action          VARCHAR(100) NOT NULL,
+    data            JSONB NOT NULL DEFAULT '{}',
+    channel         VARCHAR(50),
     created_at      TIMESTAMP DEFAULT NOW()
 );
 
-CREATE TABLE call_sessions (
+CREATE TABLE trigger_log (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    call_id         VARCHAR(255) UNIQUE NOT NULL,
-    session_token   VARCHAR(255),
-    control_url     TEXT,
-    customer_name   VARCHAR(200),
-    customer_phone  VARCHAR(20),
-    created_at      TIMESTAMP DEFAULT NOW(),
-    updated_at      TIMESTAMP DEFAULT NOW(),
-    expires_at      TIMESTAMP NOT NULL
-);
-
-CREATE TABLE api_audit_logs (
-    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    request_id      VARCHAR(255) UNIQUE NOT NULL,
-    method          VARCHAR(10) NOT NULL,
-    path            TEXT NOT NULL,
-    request_headers JSONB,
-    request_body    JSONB,
-    status_code     INTEGER,
-    response_body   JSONB,
-    duration        INTEGER,  -- milliseconds
-    api_key_prefix  VARCHAR(20),
-    error_message   TEXT,
+    session_id      UUID REFERENCES sessions(id) ON DELETE CASCADE,
+    rule_name       VARCHAR(100) NOT NULL,
+    action_taken    VARCHAR(100) NOT NULL,
+    channel_used    VARCHAR(50),
+    result          VARCHAR(50),
     created_at      TIMESTAMP DEFAULT NOW()
 );
 
--- Indexes for common queries
-CREATE INDEX idx_sessions_expires ON sessions(expires_at);
+-- Indexes
 CREATE INDEX idx_sessions_status ON sessions(status);
-CREATE INDEX idx_activities_session ON screen_activities(session_token);
-CREATE INDEX idx_activities_created ON screen_activities(created_at);
-CREATE INDEX idx_calls_session ON call_sessions(session_token);
+CREATE INDEX idx_sessions_expires ON sessions(expires_at);
+CREATE INDEX idx_sessions_workflow ON sessions(workflow_type);
+CREATE INDEX idx_activities_session ON activities(session_id);
+CREATE INDEX idx_activities_created ON activities(created_at);
+CREATE INDEX idx_trigger_log_session ON trigger_log(session_id);
 ```
 
-## Appendix B: Voice AI Tool Definitions
-
-```typescript
-const VAPI_TOOLS = [
-    {
-        type: "function",
-        function: {
-            name: "startSession",
-            description: "Creates a new insurance application session. Call this AFTER collecting first name, last name, and phone number.",
-            parameters: {
-                type: "object",
-                properties: {
-                    firstName: { type: "string", description: "Customer's first name" },
-                    lastName: { type: "string", description: "Customer's last name" },
-                    primaryPhone: { type: "string", description: "Phone number for SMS (10 digits)" }
-                },
-                required: ["firstName", "lastName", "primaryPhone"]
-            }
-        },
-        messages: [
-            { type: "request-start", content: "Setting that up for you..." },
-            { type: "request-complete", content: "" },
-            { type: "request-failed", content: "Let me try that again." }
-        ]
-    },
-    {
-        type: "function",
-        function: {
-            name: "sendSms",
-            description: "Sends the application link via SMS to the customer's phone.",
-            parameters: {
-                type: "object",
-                properties: {
-                    sessionToken: { type: "string" }
-                },
-                required: ["sessionToken"]
-            }
-        },
-        messages: [
-            { type: "request-start", content: "Sending that text now..." },
-            { type: "request-complete", content: "" }
-        ]
-    },
-    {
-        type: "function",
-        function: {
-            name: "getScreenState",
-            description: "Gets the current state of the customer's form - which page they're on and what values are filled in.",
-            parameters: {
-                type: "object",
-                properties: {
-                    sessionToken: { type: "string" }
-                },
-                required: ["sessionToken"]
-            }
-        },
-        messages: [
-            { type: "request-start", content: "Let me check your screen..." },
-            { type: "request-complete", content: "" }
-        ]
-    },
-    {
-        type: "function",
-        function: {
-            name: "highlightField",
-            description: "Highlights a specific field on the customer's screen to help them find it.",
-            parameters: {
-                type: "object",
-                properties: {
-                    sessionToken: { type: "string" },
-                    fieldId: { type: "string", description: "The field ID to highlight" },
-                    fieldName: { type: "string", description: "Human-readable field name" }
-                },
-                required: ["sessionToken", "fieldId"]
-            }
-        },
-        messages: [
-            { type: "request-start", content: "" },
-            { type: "request-complete", content: "" }
-        ]
-    }
-];
-```
-
-## Appendix C: Trigger Rule Examples
+## Appendix B: Trigger Rule Configuration
 
 ```yaml
-# Production trigger configuration
+# Example trigger configuration file
+
+defaults:
+  poll_interval_seconds: 30
+  max_triggers_per_session: 5
 
 triggers:
-  # Voice prompts for inactive users
+  # Gentle nudge for inactive users
   - name: gentle_nudge
-    condition:
-      type: no_activity
-      duration_seconds: 90
-    action:
-      type: voice_prompt
-      message: "Still there? Let me know if you need help with anything."
-    max_triggers_per_session: 2
+    condition_type: no_activity
+    duration_seconds: 90
+    action_type: voice_prompt
+    channel: voice
+    message: "Still there? Let me know if you need help."
+    max_triggers: 2
+    priority: low
 
-  # Field-specific guidance
-  - name: dob_help
-    condition:
-      type: field_error
-      field_pattern: "*dob*"
-      error_count: 2
-    action:
-      type: voice_guidance
-      message: "For date of birth, use the format month, day, year. Like January 15, 1990."
+  # Guidance for repeated errors
+  - name: error_guidance
+    condition_type: repeated_error
+    error_count: 2
+    within_seconds: 60
+    action_type: guidance
+    channel: voice
+    message: "That field can be tricky. Let me walk you through it."
+    max_triggers: 1
+    priority: medium
 
-  # Human escalation
+  # Human escalation for stuck sessions
   - name: escalate_stuck
-    condition:
-      type: no_progress
-      duration_seconds: 300
-      screens_unchanged: true
-    action:
-      type: dashboard_alert
-      priority: high
-      message: "Customer stuck on {current_screen} for 5+ minutes"
+    condition_type: no_progress
+    duration_seconds: 300
+    action_type: dashboard_alert
+    channel: dashboard
+    message: "Session {id} needs human review. Stuck for 5+ minutes."
+    max_triggers: 1
+    priority: high
 
-  # Abandonment recovery
+  # Abandonment recovery via SMS
   - name: followup_sms
-    condition:
-      type: session_inactive
-      duration_seconds: 3600
-      status: ACTIVE
-    action:
-      type: sms
-      template: "Hi {first_name}! You started a life insurance application earlier. Ready to finish? Click here: {resume_link}"
-    max_triggers_per_session: 1
+    condition_type: no_activity
+    duration_seconds: 3600
+    status_required: ACTIVE
+    action_type: sms
+    channel: sms
+    message: "Hi {name}! Ready to continue? Click here: {resume_link}"
+    max_triggers: 1
+    priority: low
+```
+
+## Appendix C: Channel Interface
+
+```python
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+
+@dataclass
+class DeliveryResult:
+    success: bool
+    channel: str
+    message_id: str = None
+    error: str = None
+
+class Channel(ABC):
+    """Base interface for all communication channels."""
+
+    @abstractmethod
+    async def send(self, message: str, recipient: Worker) -> DeliveryResult:
+        """Send a message to a worker."""
+        pass
+
+    @abstractmethod
+    async def is_available(self) -> bool:
+        """Check if this channel is currently operational."""
+        pass
+
+class VoiceChannel(Channel):
+    async def send(self, message: str, recipient: Worker) -> DeliveryResult:
+        # Initiate voice call or inject message into active call
+        ...
+
+class SMSChannel(Channel):
+    async def send(self, message: str, recipient: Worker) -> DeliveryResult:
+        # Send SMS via Twilio/MessageBird
+        ...
+
+class DashboardChannel(Channel):
+    async def send(self, message: str, recipient: Worker) -> DeliveryResult:
+        # Push alert to web dashboard via WebSocket
+        ...
+
+class SlackChannel(Channel):
+    async def send(self, message: str, recipient: Worker) -> DeliveryResult:
+        # Post message to Slack channel or DM
+        ...
+
+class EmailChannel(Channel):
+    async def send(self, message: str, recipient: Worker) -> DeliveryResult:
+        # Send email via SendGrid/SES
+        ...
 ```
