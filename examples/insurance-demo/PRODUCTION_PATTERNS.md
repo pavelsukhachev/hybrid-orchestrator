@@ -2,6 +2,8 @@
 
 Patterns extracted from a production voice AI system for insurance to demonstrate hybrid human-AI orchestration.
 
+Interactive Demo 0 lives in `/docs`.
+
 ## System Overview
 
 A voice-guided insurance application platform where:
