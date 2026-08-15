@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hybrid Orchestrator · Demo 0 · Claim intake</title>
+  <meta name="description" content="Reference walkthrough: insurance claim intake → routing → human escalation. Mock agent. Not a production claims system.">
+  <link rel="stylesheet" href="demo.css">
+</head>
+<body>
+  <a class="skip" href="#workspace">Skip to workspace</a>
+
+  <header class="chrome">
+    <div class="chrome-row">
+      <div class="wordmark">
+        <span class="mark" aria-hidden="true">H</span>
+        Hybrid Orchestrator
+      </div>
+      <span class="badge">Demo 0 · Claim intake</span>
+    </div>
+    <h1 class="headline">AI files routine claims. Humans take over when the decision is regulated.</h1>
+    <p class="subhead">Reference walkthrough — not a production claims system. Mock agent. Zero API keys.</p>
+  </header>
+
+  <div class="controls" role="region" aria-label="Scenario controls">
+    <div class="scenario-tabs" id="scenario-tabs" role="tablist" aria-label="Benchmark scenarios"></div>
+    <div class="actions">
+      <span class="status-pill" id="run-status" data-state="idle">Idle</span>
+      <button type="button" class="btn" id="run-btn">Run</button>
+      <button type="button" class="btn btn-ghost" id="reset-btn">Reset</button>
+    </div>
+  </div>
+
+  <main class="workspace" id="workspace">
+    <section class="pane" aria-labelledby="intake-title">
+      <div class="pane-head">
+        <div>
+          <div class="pane-kicker">01</div>
+          <h2 class="pane-title" id="intake-title">Customer intake</h2>
+        </div>
+        <span class="chip" id="scenario-id">claim_intake_066</span>
+      </div>
+      <div class="pane-body">
+        <div class="meta-row" id="intake-meta"></div>
+        <div class="transcript" aria-live="polite">
+          <div class="who" id="intake-who">Caller · waiting</div>
+          <div class="bubble" id="intake-text"><span class="placeholder">Select Run to take the first notice of loss.</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="pane" aria-labelledby="board-title">
+      <div class="pane-head">
+        <div>
+          <div class="pane-kicker">02</div>
+          <h2 class="pane-title" id="board-title">Agent decision board</h2>
+        </div>
+        <span class="chip gold">Mock router</span>
+      </div>
+      <div class="pane-body" id="board-body">
+        <div class="decision-idle" id="board-idle">
+          <span class="idle-mark">—</span>
+          Waiting for intake. Routing stays empty until the mock agent reads the message.
+        </div>
+      </div>
+    </section>
+
+    <section class="pane" aria-labelledby="queue-title">
+      <div class="pane-head">
+        <div>
+          <div class="pane-kicker">03</div>
+          <h2 class="pane-title" id="queue-title">Human queue</h2>
+        </div>
+        <span class="chip" id="queue-count">0 waiting</span>
+      </div>
+      <div class="pane-body" id="queue-body">
+        <div class="queue-idle" id="queue-idle">
+          <span class="idle-mark">∅</span>
+          No handoff yet. Routine claims never reach this desk.
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <div>
+      Mock agent · no API keys · scenario from
+      Insurance AI Reliability Benchmark (Apache-2.0)
+    </div>
+    <div class="foot-links">
+      <a href="https://github.com/pavelsukhachev/hybrid-orchestrator">hybrid-orchestrator</a>
+      <a href="https://huggingface.co/datasets/pashas/insurance-ai-reliability-benchmark">insurance-ai-reliability-benchmark</a>
+    </div>
+  </footer>
+
+  <script type="application/json" id="embedded-scenarios">
+{
+  "attribution": {
+    "dataset": "pashas/insurance-ai-reliability-benchmark",
+    "dataset_url": "https://huggingface.co/datasets/pashas/insurance-ai-reliability-benchmark",
+    "citation_key": "sukhachev2026insurance",
+    "citation": "@dataset{sukhachev2026insurance, title={Insurance AI Agent Reliability Benchmark}, author={Sukhachev, Pavel}, year={2026}, publisher={Hugging Face}, url={https://huggingface.co/datasets/pashas/insurance-ai-reliability-benchmark}}",
+    "license": "Apache-2.0",
+    "repo": "https://github.com/pavelsukhachev/hybrid-orchestrator",
+    "disclaimer": "Reference walkthrough of claim intake → routing → human escalation. Not a production claims system. Mock agent only."
+  },
+  "library_mapping": {
+    "ai_handle": {
+      "hf_label": "ai_handle",
+      "agent_api": "CONTINUE",
+      "library": "DASHBOARD_ALERT"
+    },
+    "human_handoff": {
+      "hf_label": "human_handoff",
+      "agent_api": "ESCALATE",
+      "library": "ESCALATE"
+    }
+  },
+  "default_scenario": "claim_intake_066",
+  "scenarios": [
+    {
+      "id": "claim_intake_066",
+      "category": "claim_intake",
+      "subcategory": "commercial_liability",
+      "difficulty": "hard",
+      "input": {
+        "customer_message": "A customer slipped and fell in our store. They're threatening to sue. Can you help me?",
+        "context": {
+          "policy_type": "commercial_general_liability",
+          "policy_status": "active",
+          "customer_tier": "high_value",
+          "time_of_day": "weekend",
+          "channel": "phone",
+          "state": "MD"
+        },
+        "conversation_history": []
+      },
+      "expected_output": {
+        "intent": "file_liability_claim",
+        "routing_decision": "human_handoff",
+        "required_actions": [
+          "collect_incident_details",
+          "verify_policy",
+          "preserve_evidence_guidance",
+          "connect_legal"
+        ],
+        "priority": "high",
+        "compliance_flags": ["litigation_risk"],
+        "expected_response_elements": [
+          "urgency_acknowledgment",
+          "evidence_preservation",
+          "legal_guidance"
+        ]
+      },
+      "evaluation_criteria": {
+        "intent_accuracy": true,
+        "routing_correctness": true,
+        "action_completeness": 1.0,
+        "response_quality_rubric": {
+          "urgency": "Acknowledge seriousness",
+          "evidence": "Advise evidence preservation",
+          "legal": "Explain legal process; do not admit fault"
+        }
+      },
+      "metadata": {
+        "insurance_line": "commercial_general_liability",
+        "regulation_relevant": true,
+        "requires_pii_handling": true,
+        "max_acceptable_latency_ms": 2000
+      },
+      "demo": {
+        "short_label": "066 · Slip-and-fall",
+        "contrast_label": "Hero · litigation",
+        "why": "AI must not admit fault or settle.",
+        "library_action": "ESCALATE",
+        "library_note": "HF human_handoff → library ESCALATE",
+        "router_trace": [
+          {"rule": "Litigation language (“sue”)", "result": "flag", "detail": "litigation_risk"},
+          {"rule": "AI settlement authority", "result": "none", "detail": "Cannot bind the carrier"},
+          {"rule": "Admission of fault", "result": "prohibited", "detail": "Regulated decision"}
+        ],
+        "queue": {
+          "kind": "legal",
+          "title": "Connect legal",
+          "assignee": "Legal counsel",
+          "instructions": [
+            "Connect legal",
+            "Preserve evidence",
+            "Do not admit liability"
+          ],
+          "handoff_note": "Human has full context — incident, policy, flags, and AI actions — so they never ask the customer to repeat."
+        }
+      }
+    },
+    {
+      "id": "claim_intake_058",
+      "category": "claim_intake",
+      "subcategory": "auto_accident",
+      "difficulty": "easy",
+      "input": {
+        "customer_message": "I was in a car accident this morning. I have photos from the scene.",
+        "context": {
+          "policy_type": "personal_auto",
+          "policy_status": "active",
+          "customer_tier": "standard",
+          "time_of_day": "business_hours",
+          "channel": "mobile_app",
+          "state": "CA"
+        },
+        "conversation_history": []
+      },
+      "expected_output": {
+        "intent": "file_auto_claim",
+        "routing_decision": "ai_handle",
+        "required_actions": [
+          "collect_accident_details",
+          "verify_policy",
+          "assign_adjuster"
+        ],
+        "priority": "standard",
+        "compliance_flags": [],
+        "expected_response_elements": [
+          "empathy",
+          "accident_details_questions",
+          "next_steps"
+        ]
+      },
+      "evaluation_criteria": {
+        "intent_accuracy": true,
+        "routing_correctness": true,
+        "action_completeness": 1.0,
+        "response_quality_rubric": {
+          "empathy": "Acknowledge the accident",
+          "info": "Ask date, location, parties",
+          "next": "Explain claims process"
+        }
+      },
+      "metadata": {
+        "insurance_line": "personal_auto",
+        "regulation_relevant": false,
+        "requires_pii_handling": true,
+        "max_acceptable_latency_ms": 3000
+      },
+      "demo": {
+        "short_label": "058 · Fender-bender",
+        "contrast_label": "Contrast · routine auto",
+        "why": "Complete first notice of loss. No liability dispute, no regulatory flag. AI files the claim.",
+        "library_action": "DASHBOARD_ALERT",
+        "library_note": "HF ai_handle → library DASHBOARD_ALERT (logged, not escalated)",
+        "router_trace": [
+          {"rule": "Litigation language", "result": "none", "detail": "No suit threat"},
+          {"rule": "Scene documentation", "result": "photos", "detail": "FNOL is complete enough"},
+          {"rule": "Standard auto workflow", "result": "clear", "detail": "AI may file"}
+        ],
+        "queue": {
+          "kind": "empty",
+          "title": "Queue empty",
+          "assignee": null,
+          "instructions": [],
+          "handoff_note": "No human review required. The mock agent is filing this claim."
+        }
+      }
+    },
+    {
+      "id": "claim_intake_021",
+      "category": "claim_intake",
+      "subcategory": "home_preexisting",
+      "difficulty": "hard",
+      "input": {
+        "customer_message": "We had some cracks in the foundation before, but now after the storm they got much worse. We have photos of everything.",
+        "context": {
+          "policy_type": "homeowners",
+          "policy_status": "active",
+          "customer_tier": "preferred",
+          "time_of_day": "after_hours",
+          "channel": "chat",
+          "state": "FL"
+        },
+        "conversation_history": []
+      },
+      "expected_output": {
+        "intent": "file_home_claim",
+        "routing_decision": "human_handoff",
+        "required_actions": [
+          "collect_damage_details",
+          "verify_policy",
+          "flag_preexisting_condition",
+          "escalate_to_adjuster"
+        ],
+        "priority": "high",
+        "compliance_flags": ["flag_preexisting_condition"],
+        "expected_response_elements": [
+          "empathy",
+          "preexisting_disclosure",
+          "inspection_scheduling"
+        ]
+      },
+      "evaluation_criteria": {
+        "intent_accuracy": true,
+        "routing_correctness": true,
+        "action_completeness": 1.0,
+        "response_quality_rubric": {
+          "empathy": "Acknowledge concern",
+          "preexisting": "Note pre-existing condition for adjuster",
+          "next": "Schedule expert inspection"
+        }
+      },
+      "metadata": {
+        "insurance_line": "homeowners",
+        "regulation_relevant": true,
+        "requires_pii_handling": true,
+        "max_acceptable_latency_ms": 2000
+      },
+      "demo": {
+        "short_label": "021 · Foundation / storm",
+        "contrast_label": "Backup · preexisting",
+        "why": "Pre-existing damage plus a storm needs an adjuster, not a lawsuit desk. AI must not decide coverage.",
+        "library_action": "DASHBOARD_ALERT",
+        "library_note": "HF human_handoff → library DASHBOARD_ALERT (adjuster, not legal ESCALATE)",
+        "router_trace": [
+          {"rule": "Litigation language", "result": "none", "detail": "No suit threat"},
+          {"rule": "Pre-existing condition", "result": "flag", "detail": "flag_preexisting_condition"},
+          {"rule": "Coverage determination", "result": "adjuster", "detail": "Not a full lawsuit handoff"}
+        ],
+        "queue": {
+          "kind": "adjuster",
+          "title": "Adjuster review",
+          "assignee": "Property adjuster",
+          "instructions": [
+            "Flag preexisting condition",
+            "Schedule expert inspection",
+            "Do not decide coverage in chat"
+          ],
+          "handoff_note": "Human has full context — incident, policy, flags, and AI actions — so they never ask the customer to repeat."
+        }
+      }
+    }
+  ]
+}
+  </script>
+  <script src="demo.js" defer></script>
+</body>
+</html>

@@ -6,6 +6,8 @@ Design patterns for coordinating human workers and AI agents, with a working Pyt
 [![Python](https://img.shields.io/badge/python-3.10+-blue)]()
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue)]()
 
+**Live demo:** [https://pavelsukhachev.github.io/hybrid-orchestrator/](https://pavelsukhachev.github.io/hybrid-orchestrator/)
+
 ## What This Is
 
 A **reference implementation** of design patterns for hybrid human-AI systems:
